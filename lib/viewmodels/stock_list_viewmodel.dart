@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/exceptions.dart';
 import '../models/stock.dart';
 import '../services/stock_service.dart';
 
@@ -24,8 +25,12 @@ class StockListViewModel extends ChangeNotifier {
 
     try {
       _stocks = await _stockService.fetchStocks(['AAPL', 'GOOGL', 'AMZN']);
+    } on NetworkException catch (e) {
+      _error = 'Network error: ${e.message}';
+    } on DataParsingException catch (e) {
+      _error = 'Data error: ${e.message}';
     } catch (e) {
-      _error = 'Failed to fetch stocks: $e';
+      _error = 'An unexpected error occurred: $e';
     }
 
     _isLoading = false;

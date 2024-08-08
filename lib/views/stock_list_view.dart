@@ -32,9 +32,16 @@ class _StockListViewState extends State<StockListView> {
           if (viewModel.error != null) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(viewModel.error!)),
+                SnackBar(
+                  content: Text(viewModel.error!),
+                  backgroundColor: viewModel.error!.startsWith('Network error') ? Colors.red : Colors.orange,
+                ),
               );
             });
+          }
+
+          if (viewModel.stocks.isEmpty) {
+            return const Center(child: Text('No stocks available'));
           }
 
           return ListView.builder(
