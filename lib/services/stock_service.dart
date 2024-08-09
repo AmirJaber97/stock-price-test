@@ -18,25 +18,22 @@ class StockService {
         final response = await _dio.get(
           'https://www.alphavantage.co/query',
           queryParameters: {
-            'function': 'GLOBAL_QUOTE',
+            'function': 'TIME_SERIES_DAILY',
             'symbol': symbol,
             'apikey': apiKey,
           },
         );
 
         if (response.statusCode == 200) {
-          final data = response.data['Global Quote'];
-          if (data == null || data.isEmpty) {
+          final data = response.data;
+          if (data == null || data.isEmpty || data['Time Series (Daily)'] == null) {
             throw DataParsingException('No data available for $symbol');
           }
-          stocks.add(Stock(
-            symbol: data['01. symbol'],
-            price: double.parse(data['05. price']),
-          ));
+          stocks.add(Stock.fromJson(data));
         } else {
           throw NetworkException('Failed to load stock data for $symbol');
         }
-      } on DioError catch (e) {
+      } on DioException catch (e) {
         throw NetworkException('Network error for $symbol: ${e.message}');
       } on FormatException catch (e) {
         throw DataParsingException('Error parsing data for $symbol: ${e.message}');

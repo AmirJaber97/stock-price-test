@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/stock_list_viewmodel.dart';
+import '../widgets/stock_chart.dart';
 
 class StockListView extends StatefulWidget {
   const StockListView({super.key});
@@ -48,9 +49,27 @@ class _StockListViewState extends State<StockListView> {
             itemCount: viewModel.stocks.length,
             itemBuilder: (context, index) {
               final stock = viewModel.stocks[index];
-              return ListTile(
-                title: Text(stock.symbol),
-                trailing: Text('\$${stock.price.toStringAsFixed(2)}'),
+              return Card(
+                margin: const EdgeInsets.all(8),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        stock.symbol,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '\$${stock.price.toStringAsFixed(2)}',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 16),
+                      StockChart(stock: stock),
+                    ],
+                  ),
+                ),
               );
             },
           );
