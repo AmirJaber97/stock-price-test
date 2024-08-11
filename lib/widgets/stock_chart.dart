@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -13,12 +11,10 @@ class StockChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sortedData = List<FlSpot>.from(stock.historicalData)..sort((a, b) => a.x.compareTo(b.x));
+    final sortedData = List<FlSpot>.from(stock.historicalData);
 
-    final minX = sortedData.first.x;
-    final maxX = sortedData.last.x;
-    final minY = sortedData.map((e) => e.y).reduce(min);
-    final maxY = sortedData.map((e) => e.y).reduce(max);
+    final firstX = sortedData.first.x;
+    final lastX = sortedData.last.x;
 
     return AspectRatio(
       aspectRatio: 1.70,
@@ -35,29 +31,34 @@ class StockChart extends StatelessWidget {
                 sideTitles: SideTitles(
                   showTitles: true,
                   reservedSize: 30,
-                  interval: (maxX - minX) / 5,
                   getTitlesWidget: (value, meta) {
-                    final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                    return SideTitleWidget(
-                      axisSide: meta.axisSide,
-                      space: 8.0,
-                      child: Text(DateFormat('MMM').format(date),
-                          style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold, fontSize: 12)),
-                    );
+                    if (value == firstX || value == lastX) {
+                      final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
+                      return SideTitleWidget(
+                        axisSide: meta.axisSide,
+                        space: 8.0,
+                        child: Text(
+                          DateFormat('MMM d').format(date),
+                          style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
                   },
                 ),
               ),
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
-                  interval: (maxY - minY) / 4,
                   reservedSize: 42,
                   getTitlesWidget: (value, meta) {
                     return SideTitleWidget(
                       axisSide: meta.axisSide,
                       space: 8.0,
-                      child: Text('\$${value.toInt()}',
-                          style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold, fontSize: 12)),
+                      child: Text(
+                        '\$${value.toInt()}',
+                        style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
                     );
                   },
                 ),
