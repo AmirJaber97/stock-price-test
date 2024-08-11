@@ -7,9 +7,14 @@ import 'services/stock_service.dart';
 import 'viewmodels/stock_list_viewmodel.dart';
 import 'views/stock_list_view.dart';
 
-Future<void> main() async {
+void main() async {
   await dotenv.load(fileName: ".env");
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => StockListViewModel(StockService(Dio())),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -17,23 +22,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        Provider<StockService>(
-          create: (_) => StockService(Dio()),
-        ),
-        ChangeNotifierProxyProvider<StockService, StockListViewModel>(
-          create: (_) => StockListViewModel(StockService(Dio())),
-          update: (_, stockService, __) => StockListViewModel(stockService),
-        ),
-      ],
-      child: MaterialApp(
-        title: 'Stock Price App',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-        ),
-        home: const StockListView(),
-      ),
+    return const MaterialApp(
+      title: 'Stock App',
+      home: StockListView(),
     );
   }
 }

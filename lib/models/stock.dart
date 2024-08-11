@@ -8,18 +8,18 @@ class Stock {
   Stock({required this.symbol, required this.price, required this.historicalData});
 
   factory Stock.fromJson(Map<String, dynamic> json) {
-    List<FlSpot> historicalData = [];
-    if (json['Time Series (Daily)'] != null) {
-      json['Time Series (Daily)'].forEach((key, value) {
-        historicalData.add(FlSpot(
-          DateTime.parse(key).millisecondsSinceEpoch.toDouble(),
-          double.parse(value['4. close']),
-        ));
-      });
-    }
+    final timeSeries = json['Time Series (Daily)'] as Map<String, dynamic>;
+    final List<FlSpot> historicalData = timeSeries.entries.map((entry) {
+      final date = DateTime.parse(entry.key);
+      final closePrice = double.parse(entry.value['4. close']);
+      return FlSpot(date.millisecondsSinceEpoch.toDouble(), closePrice);
+    }).toList();
+
+    historicalData.sort((a, b) => a.x.compareTo(b.x));
+
     return Stock(
       symbol: json['Meta Data']['2. Symbol'],
-      price: double.parse(json['Time Series (Daily)'].values.first['4. close']),
+      price: double.parse(timeSeries.values.first['4. close']),
       historicalData: historicalData,
     );
   }

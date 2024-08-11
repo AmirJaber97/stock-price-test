@@ -10,7 +10,9 @@ class StockListViewModel extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
-  StockListViewModel(this._stockService);
+  StockListViewModel(this._stockService) {
+    fetchStocks();
+  }
 
   List<Stock> get stocks => _stocks;
 
@@ -24,16 +26,16 @@ class StockListViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _stocks = await _stockService.fetchStocks(['AAPL', 'GOOGL', 'AMZN']);
+      _stocks = await _stockService.fetchStocks(['AMZN']);
     } on NetworkException catch (e) {
       _error = 'Network error: ${e.message}';
     } on DataParsingException catch (e) {
       _error = 'Data error: ${e.message}';
     } catch (e) {
-      _error = 'An unexpected error occurred: $e';
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 }

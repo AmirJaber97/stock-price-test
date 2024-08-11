@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -9,105 +11,82 @@ class StockChart extends StatelessWidget {
 
   const StockChart({super.key, required this.stock});
 
-  List<FlSpot> _getMonthlyData() {
-    final Map<int, FlSpot> monthlyData = {};
-    for (var spot in stock.historicalData) {
-      final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
-      final monthKey = DateTime(date.year, date.month).millisecondsSinceEpoch;
-      if (!monthlyData.containsKey(monthKey) || spot.x < monthlyData[monthKey]!.x) {
-        monthlyData[monthKey] = spot;
-      }
-    }
-    return monthlyData.values.toList()..sort((a, b) => a.x.compareTo(b.x));
-  }
-
   @override
   Widget build(BuildContext context) {
-    final monthlyData = _getMonthlyData();
-    final minY = stock.historicalData.map((e) => e.y).reduce((a, b) => a < b ? a : b);
-    final maxY = stock.historicalData.map((e) => e.y).reduce((a, b) => a > b ? a : b);
-    final yInterval = (maxY - minY) / 5;
+    final sortedData = List<FlSpot>.from(stock.historicalData)..sort((a, b) => a.x.compareTo(b.x));
 
-    debugPrint('Monthly data points: ${monthlyData.length}');
-    for (var spot in monthlyData) {
-      debugPrint(
-          'Date: ${DateFormat('yyyy-MM-dd').format(DateTime.fromMillisecondsSinceEpoch(spot.x.toInt()))}, Price: ${spot.y}');
-    }
+    final minX = sortedData.first.x;
+    final maxX = sortedData.last.x;
+    final minY = sortedData.map((e) => e.y).reduce(min);
+    final maxY = sortedData.map((e) => e.y).reduce(max);
 
-    return SizedBox(
-      height: 300,
-      child: LineChart(
-        LineChartData(
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: true,
-            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey[300], strokeWidth: 1),
-            getDrawingVerticalLine: (value) => FlLine(color: Colors.grey[300], strokeWidth: 1),
-          ),
-          titlesData: FlTitlesData(
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30,
-                interval: (monthlyData.last.x - monthlyData.first.x) / (monthlyData.length - 1),
-                getTitlesWidget: (value, meta) {
-                  final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                  debugPrint('Creating label for date: ${DateFormat('yyyy-MM-dd').format(date)}');
-                  return SideTitleWidget(
-                    axisSide: meta.axisSide,
-                    space: 10,
-                    child: Text(
-                      DateFormat('MMM').format(date),
-                      style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold, fontSize: 10),
-                    ),
-                  );
-                },
+    return AspectRatio(
+      aspectRatio: 1.70,
+      child: Padding(
+        padding: const EdgeInsets.only(right: 18, left: 12, top: 24, bottom: 12),
+        child: LineChart(
+          LineChartData(
+            gridData: const FlGridData(show: false),
+            titlesData: FlTitlesData(
+              show: true,
+              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 30,
+                  interval: (maxX - minX) / 5,
+                  getTitlesWidget: (value, meta) {
+                    final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
+                    return SideTitleWidget(
+                      axisSide: meta.axisSide,
+                      space: 8.0,
+                      child: Text(DateFormat('MMM').format(date),
+                          style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold, fontSize: 12)),
+                    );
+                  },
+                ),
+              ),
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  interval: (maxY - minY) / 4,
+                  reservedSize: 42,
+                  getTitlesWidget: (value, meta) {
+                    return SideTitleWidget(
+                      axisSide: meta.axisSide,
+                      space: 8.0,
+                      child: Text('\$${value.toInt()}',
+                          style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold, fontSize: 12)),
+                    );
+                  },
+                ),
               ),
             ),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 40,
-                interval: yInterval,
-                getTitlesWidget: (value, meta) {
-                  return SideTitleWidget(
-                    axisSide: meta.axisSide,
-                    child: Text('\$${value.toStringAsFixed(2)}',
-                        style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold, fontSize: 10)),
-                  );
+            borderData: FlBorderData(show: true, border: Border.all(color: const Color(0xff37434d), width: 1)),
+            lineBarsData: [
+              LineChartBarData(
+                spots: sortedData,
+                isCurved: true,
+                color: Colors.blue,
+                barWidth: 2,
+                isStrokeCapRound: true,
+                dotData: const FlDotData(show: false),
+                belowBarData: BarAreaData(show: true, color: Colors.blue.withOpacity(0.1)),
+              ),
+            ],
+            lineTouchData: LineTouchData(
+              touchTooltipData: LineTouchTooltipData(
+                getTooltipItems: (touchedSpots) {
+                  return touchedSpots.map((LineBarSpot touchedSpot) {
+                    final date = DateTime.fromMillisecondsSinceEpoch(touchedSpot.x.toInt());
+                    return LineTooltipItem(
+                      '${DateFormat('MMM dd, yyyy').format(date)}\n\$${touchedSpot.y.toStringAsFixed(2)}',
+                      const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    );
+                  }).toList();
                 },
               ),
-            ),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          ),
-          borderData: FlBorderData(show: true, border: Border.all(color: const Color(0xff37434d), width: 1)),
-          minX: monthlyData.first.x,
-          maxX: monthlyData.last.x,
-          minY: minY,
-          maxY: maxY,
-          lineBarsData: [
-            LineChartBarData(
-              spots: stock.historicalData,
-              isCurved: true,
-              color: Colors.blue,
-              barWidth: 2,
-              isStrokeCapRound: true,
-              dotData: const FlDotData(show: false),
-              belowBarData: BarAreaData(show: true, color: Colors.blue.withOpacity(0.1)),
-            ),
-          ],
-          lineTouchData: LineTouchData(
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipItems: (touchedSpots) {
-                return touchedSpots.map((LineBarSpot touchedSpot) {
-                  final date = DateTime.fromMillisecondsSinceEpoch(touchedSpot.x.toInt());
-                  return LineTooltipItem(
-                    '${DateFormat('MMM dd, yyyy').format(date)}\n\$${touchedSpot.y.toStringAsFixed(2)}',
-                    const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                  );
-                }).toList();
-              },
             ),
           ),
         ),

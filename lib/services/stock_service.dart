@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -26,6 +28,9 @@ class StockService {
 
         if (response.statusCode == 200) {
           final data = response.data;
+
+          log('raw data is $data');
+
           if (data == null || data.isEmpty || data['Time Series (Daily)'] == null) {
             throw DataParsingException('No data available for $symbol');
           }
